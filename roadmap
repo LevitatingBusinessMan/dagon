@@ -1,0 +1,19 @@
+phase 1:
+Temporary protocol
+Signaling server can authenticate a user, and group them together. Peers can send data to each other.
+
+phase 2:
+Base protocol defined.
+Working client with heartbeat and all, creating rooms.
+Encrypted messaging. (Session keys, key-exchange)
+Decision mechanism.
+
+phase 3:
+Room settings like whitelists. Decision control (master or majority).
+Simple cross-messaging algorithm?
+
+phase 4:
+Cross-messaging algorithms
+
+phase 4:
+History

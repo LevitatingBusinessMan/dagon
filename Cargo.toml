@@ -1,0 +1,19 @@
+[package]
+name = "dagon"
+version = "0.1.0"
+authors = ["LevitatingBusinessMan <public@reinfernhout.xyz>"]
+edition = "2018"
+
+[lib]
+name = "lib"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "server"
+path = "src/server/main.rs"
+
+[[bin]]
+name = "client"
+path = "src/client/main.rs"
+
+[dependencies]
