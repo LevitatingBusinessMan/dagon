@@ -1,5 +1,6 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Read,Write};
+use std::time::Duration;
 
 extern crate lib;
 
@@ -20,6 +21,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn on_connect(mut stream: TcpStream) {
+	stream.set_read_timeout(Some(Duration::new(0, 100000000))).unwrap(); //100ms
 	let data = decode(&stream).unwrap();
 	println!("{:?}", data);
 	stream.write(format!("{:?}", data).as_bytes());

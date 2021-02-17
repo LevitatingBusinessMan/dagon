@@ -13,7 +13,7 @@ Then the length of the value, another closing :
 And then the key and value
 
 Example:
-#2:1:id2$3:5hello
+#2:1:id2$3:5:msghello
 	id: 2
 	msg: "hello"
 
@@ -46,15 +46,19 @@ pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
 					Ok(b'$') => is_integer = false,
 					Ok(b'#') => is_integer = true,
 					Ok(unknown) => return Err(Error::new(ErrorKind::InvalidData, format!("Unrecognized starting byte: '{}'", unknown))),
-					Err(_) => return Err(Error::new(ErrorKind::InvalidData, "Failed to receive starting byte"))
+					Err(_) => {
+						if hashmap.len() > 0 {
+							return Ok(hashmap)
+						}
+						return Err(Error::new(ErrorKind::InvalidData, "Failed to receive starting byte"))
+					}
 				}
 			},
 			None => {
 				if hashmap.len() > 0 {
 					return Ok(hashmap)
-				} else {
-					return Err(Error::new(ErrorKind::InvalidData, "Expected starting byte but none found"))
 				}
+				return Err(Error::new(ErrorKind::InvalidData, "Expected starting byte but none found"))
 			}
 		}
 
