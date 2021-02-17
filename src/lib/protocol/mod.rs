@@ -17,6 +17,9 @@ Example:
 	id: 2
 	msg: "hello"
 
+Decode like:
+decode(&mut "#2:1:id2$3:5:msghello".bytes())
+
 Regex: (\$\d:\d\w*|#\d:\d\w*\d)+
 
 There is a lot of uknown behavior like with empty keys or values
@@ -31,10 +34,8 @@ pub enum Value {
 	Data(Vec::<u8>)
 }
 
-pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
+pub fn decode(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value>>
 {
-	//Turn into iterator
-	let mut data = data.bytes();
 	
 	let mut hashmap = HashMap::new();
 
@@ -43,15 +44,17 @@ pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
 		match data.next() {
 			Some(first_byte) => {
 				match first_byte {
-					Ok(b'$') => is_integer = false,
-					Ok(b'#') => is_integer = true,
-					Ok(unknown) => return Err(Error::new(ErrorKind::InvalidData, format!("Unrecognized starting byte: '{}'", unknown))),
-					Err(_) => {
+					b'$' => is_integer = false,
+					b'#' => is_integer = true,
+
+					//Unwrapping the result returned an error
+					0 => {
 						if hashmap.len() > 0 {
 							return Ok(hashmap)
 						}
-						return Err(Error::new(ErrorKind::InvalidData, "Failed to receive starting byte"))
+						return Err(Error::new(ErrorKind::InvalidData, "Failed to get starting byte"))
 					}
+					unknown => return Err(Error::new(ErrorKind::InvalidData, format!("Unrecognized starting byte: '{}'", unknown)))
 				}
 			},
 			None => {
@@ -67,7 +70,7 @@ pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
 		let mut buf = String::new();
 
 		loop {
-			let byte = data.next().unwrap().unwrap() as char;
+			let byte = data.next().unwrap() as char;
 			
 			if !byte.is_digit(10) {
 				if byte == ':' {
@@ -85,7 +88,7 @@ pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
 
 
 		loop {
-			let byte = data.next().unwrap().unwrap() as char;
+			let byte = data.next().unwrap() as char;
 
 			if !byte.is_digit(10) {
 				if byte == ':' {
@@ -105,7 +108,7 @@ pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
 		//Parsing the values
 		let mut key = String::with_capacity(keylength as usize);
 		for _ in 0..keylength {
-			let byte = data.next().unwrap().unwrap() as char;
+			let byte = data.next().unwrap() as char;
 			if !byte.is_ascii_alphanumeric() {
 				return Err(Error::new(ErrorKind::InvalidData, format!("Unsupported byte in key: '{}'", byte as u8)))
 			}
@@ -117,14 +120,14 @@ pub fn decode<T: Read>(data: T) -> Result<HashMap<String, Value>>
 		if !is_integer{
 			let mut value_data = Vec::<u8>::with_capacity(valuelength as usize);
 			for _ in 0..valuelength {
-				let byte = data.next().unwrap().unwrap();
+				let byte = data.next().unwrap();
 				value_data.push(byte);
 			}
 			value = Value::Data(value_data);
 		} else {
 			let mut value_data = String::with_capacity(valuelength as usize);
 			for _ in 0..valuelength {
-				let byte = data.next().unwrap().unwrap() as char;
+				let byte = data.next().unwrap() as char;
 				if !byte.is_digit(10) {
 					return Err(Error::new(ErrorKind::InvalidData, format!("Unsupported byte in integer value: '{}'", byte as u8)))
 				}
