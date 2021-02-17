@@ -34,18 +34,24 @@ pub enum Value {
 	Data(Vec::<u8>)
 }
 
+#[derive(PartialEq)]
+enum DataType {
+	Integer,
+	Data
+}
+
 pub fn decode(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value>>
 {
 	
 	let mut hashmap = HashMap::new();
 
 	loop {
-		let is_integer: bool;
+		let data_type: DataType;
 		match data.next() {
 			Some(first_byte) => {
 				match first_byte {
-					b'$' => is_integer = false,
-					b'#' => is_integer = true,
+					b'$' => data_type = DataType::Data,
+					b'#' => data_type = DataType::Integer,
 
 					//Unwrapping the result returned an error
 					0 => {
@@ -71,7 +77,6 @@ pub fn decode(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value
 
 		loop {
 			let byte = data.next().unwrap() as char;
-			
 			if !byte.is_digit(10) {
 				if byte == ':' {
 					break
@@ -117,7 +122,7 @@ pub fn decode(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value
 
 		let value: Value;
 
-		if !is_integer{
+		if data_type == DataType::Data {
 			let mut value_data = Vec::<u8>::with_capacity(valuelength as usize);
 			for _ in 0..valuelength {
 				let byte = data.next().unwrap();
