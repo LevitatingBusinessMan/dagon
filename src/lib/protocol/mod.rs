@@ -3,9 +3,19 @@ use std::io::{Error, ErrorKind, Result};
 use std::collections::HashMap;
 
 /*
+Current message syntax:
+"""
+CMD\r\n
+DASP_DATA
+"""
+
+Where CMD is always a 3 letter command
+*/
+
+/*
 I am in no way whatsoever certain what the protocol will be.
 I could go with capnrpoto, or messagepack, some self defined mess.
-For now I cooked up this hashmap encoding.
+For now I cooked up this hashmap encoding (DASP).
 
 A keyvalue pair either starts with a $ or # (string type for the first, integer for the latter)
 Followed is the length of the key, a closing :
@@ -40,7 +50,35 @@ enum DataType {
 	Data
 }
 
-pub fn decode(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value>>
+///Decode full protocol messages, the command and data
+pub fn decode_message(stream: &mut impl Iterator<Item=u8>) -> Result<(String, HashMap<String, Value>)> {
+	
+	let command = stream.take(3).collect::<Vec::<u8>>();
+	let command = String::from_utf8_lossy(&command);
+
+	if !(stream.next() == Some('\r' as u8) && stream.next() == Some('\n' as u8)) {
+		return Err(Error::new(ErrorKind::InvalidData, "4th and 5th byte is not '\\r\\n'"))
+	}
+
+	let data = decode_data(stream);
+	println!("{}", command);
+
+	return match data {
+		Ok(data) => Ok((command.to_string(), data)),
+		Err(error) => {
+
+			//Allow empty data
+			if error.to_string() == "Failed to get starting byte".to_string() {
+				return Ok((command.to_string(), HashMap::new()))
+			}
+
+			return Err(error)
+		}
+	}
+}
+
+///Decode data in DASP format from a stream or string
+pub fn decode_data(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value>>
 {
 	
 	let mut hashmap = HashMap::new();
