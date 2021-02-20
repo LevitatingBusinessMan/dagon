@@ -2,11 +2,18 @@ use std::net::{TcpListener, TcpStream};
 use std::io::{Read,Write};
 use std::time::Duration;
 
-extern crate lib;
+extern crate dagon_lib;
+use dagon_lib::protocol::{decode_data, decode_message, MessageCommand};
 
-use lib::protocol::{decode_data, decode_message};
+mod commands;
+use commands::command_handler;
+
+mod keyserver;
 
 fn main() -> std::io::Result<()> {
+
+	keyserver::initialize();
+
 	let listener = TcpListener::bind("127.0.0.1:7777")?;
 
     for stream in listener.incoming() {
@@ -23,5 +30,8 @@ fn on_connect(mut stream: TcpStream) {
 	stream.set_read_timeout(Some(Duration::new(0, 100000000))).unwrap(); //100ms
 	let data = decode_message(&mut std::io::Read::by_ref(&mut stream).bytes().map(|x| x.unwrap_or_default())).unwrap();
 	println!("{:?}", data);
-	stream.write(format!("{:?}", data).as_bytes()).unwrap();
+	//stream.write(format!("{:?}\n", data).as_bytes()).unwrap();
+
+	let output = command_handler(data);
+	stream.write(output.as_bytes()).unwrap();
 }

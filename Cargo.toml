@@ -5,7 +5,7 @@ authors = ["LevitatingBusinessMan <public@reinfernhout.xyz>"]
 edition = "2018"
 
 [lib]
-name = "lib"
+name = "dagon_lib"
 path = "src/lib/lib.rs"
 
 [[bin]]
@@ -17,3 +17,5 @@ name = "client"
 path = "src/client/main.rs"
 
 [dependencies]
+sled = "0.34.6"
+pgp = "0.7.1"

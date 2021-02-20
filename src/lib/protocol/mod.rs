@@ -1,6 +1,13 @@
-use std::io::Read;
-use std::io::{Error, ErrorKind, Result};
+use std::{convert::TryInto, io::{Error, ErrorKind, Result}};
 use std::collections::HashMap;
+
+#[derive(Debug)]
+pub struct MessageCommand {
+	pub command: String,
+	pub data: HashMap<String, Value>
+}
+
+pub type MessageData = HashMap<String, Value>;
 
 /*
 Current message syntax:
@@ -51,25 +58,34 @@ enum DataType {
 }
 
 ///Decode full protocol messages, the command and data
-pub fn decode_message(stream: &mut impl Iterator<Item=u8>) -> Result<(String, HashMap<String, Value>)> {
+pub fn decode_message(stream: &mut impl Iterator<Item=u8>) -> Result<MessageCommand> {
 	
 	let command = stream.take(3).collect::<Vec::<u8>>();
-	let command = String::from_utf8_lossy(&command);
+	let command = String::from_utf8_lossy(&command).to_string();
 
+	if command.len() != 3 {
+		return Err(Error::new(ErrorKind::InvalidData, "Not able to parse 3 character command"));
+	}
+	
 	if !(stream.next() == Some('\r' as u8) && stream.next() == Some('\n' as u8)) {
-		return Err(Error::new(ErrorKind::InvalidData, "4th and 5th byte is not '\\r\\n'"))
+		return Err(Error::new(ErrorKind::InvalidData, "No 3 character command deteceted"))
 	}
 
 	let data = decode_data(stream);
-	println!("{}", command);
 
 	return match data {
-		Ok(data) => Ok((command.to_string(), data)),
+		Ok(data) => Ok(MessageCommand {
+			command: command,
+			data: data
+		}),
 		Err(error) => {
 
 			//Allow empty data
 			if error.to_string() == "Failed to get starting byte".to_string() {
-				return Ok((command.to_string(), HashMap::new()))
+				return Ok(MessageCommand {
+					command: command, 
+					data: HashMap::new()
+				})
 			}
 
 			return Err(error)
@@ -78,7 +94,7 @@ pub fn decode_message(stream: &mut impl Iterator<Item=u8>) -> Result<(String, Ha
 }
 
 ///Decode data in DASP format from a stream or string
-pub fn decode_data(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, Value>>
+pub fn decode_data(data: &mut impl Iterator<Item=u8>) -> Result<MessageData>
 {
 	
 	let mut hashmap = HashMap::new();
@@ -91,8 +107,9 @@ pub fn decode_data(data: &mut impl Iterator<Item=u8>) -> Result<HashMap<String, 
 					b'$' => data_type = DataType::Data,
 					b'#' => data_type = DataType::Integer,
 
-					//Unwrapping the result returned an error
-					0 => {
+					//0 Could mean that the stream closed
+					//('\r') or ('\n') is regarded as the end of a message
+					0 | b'\r' | b'\n' => {
 						if hashmap.len() > 0 {
 							return Ok(hashmap)
 						}
