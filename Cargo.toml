@@ -18,4 +18,4 @@ path = "src/client/main.rs"
 
 [dependencies]
 sled = "0.34.6"
-pgp = "0.7.1"
+sequoia-openpgp = {git = "https://gitlab.com/sequoia-pgp/sequoia.git", branch="main"}

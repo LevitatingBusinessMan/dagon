@@ -2,11 +2,13 @@ use std::{convert::TryInto, io::{Error, ErrorKind, Result}};
 use std::collections::HashMap;
 
 #[derive(Debug)]
+///This struct contains all data send in a single message the command and its arguments/data
 pub struct MessageCommand {
 	pub command: String,
 	pub data: HashMap<String, Value>
 }
 
+///The DASP data in a message
 pub type MessageData = HashMap<String, Value>;
 
 /*
@@ -46,6 +48,7 @@ I should rely on an iter with defined item types.
 */
 
 #[derive(Debug)]
+///Either a vector of bytes or a single integer
 pub enum Value {
 	Integer(i32),
 	Data(Vec::<u8>)
