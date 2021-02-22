@@ -8,6 +8,13 @@ pub struct MessageCommand {
 	pub data: HashMap<String, Value>
 }
 
+/* 
+
+TODO
+MessageData should have a nice syntax to add to it
+
+*/
+
 ///The DASP data in a message
 pub type MessageData = HashMap<String, Value>;
 
@@ -60,10 +67,34 @@ enum DataType {
 	Data
 }
 
+pub fn encode_message(command: String, mut data: MessageData) -> Vec::<u8> {
+	let mut message = Vec::<u8>::new();
+	message.append(&mut format!("{}\r\n", command).into_bytes());
+	message.append(&mut encode_data(data));
+	message
+}
+
+pub fn encode_data(mut data: MessageData) -> Vec<u8> {
+	let mut encoded = Vec::<u8>::new();
+	for (key, val) in data.iter_mut() {
+		match val {
+			Value::Data(value) => {
+				encoded.append(&mut format!("${}:{}:{}", key.len(), value.len(), key).into_bytes());
+				encoded.append(value);
+			},
+			Value::Integer(value) => {
+				encoded.append(&mut format!("#{}:{}:{}", key.len(), value.to_string().len(), key).into_bytes());
+				encoded.append(&mut value.to_string().into_bytes());
+			}
+		}
+	}
+	encoded
+}
+
 ///Decode full protocol messages, the command and data
-pub fn decode_message(stream: &mut impl Iterator<Item=u8>) -> Result<MessageCommand> {
+pub fn decode_message(mut stream: impl Iterator<Item=u8>) -> Result<MessageCommand> {
 	
-	let command = stream.take(3).collect::<Vec::<u8>>();
+	let command = stream.by_ref().take(3).collect::<Vec::<u8>>();
 	let command = String::from_utf8_lossy(&command).to_string();
 
 	if command.len() != 3 {
@@ -97,7 +128,7 @@ pub fn decode_message(stream: &mut impl Iterator<Item=u8>) -> Result<MessageComm
 }
 
 ///Decode data in DASP format from a stream or string
-pub fn decode_data(data: &mut impl Iterator<Item=u8>) -> Result<MessageData>
+pub fn decode_data(mut data: impl Iterator<Item=u8>) -> Result<MessageData>
 {
 	
 	let mut hashmap = HashMap::new();
