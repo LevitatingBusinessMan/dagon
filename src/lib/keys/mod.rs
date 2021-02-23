@@ -8,6 +8,8 @@ use anyhow;
 
 use std::io::{Read, Write};
 
+static POLICY: policy = policy::new();
+
 //References:
 //https://docs.sequoia-pgp.org/sequoia_guide/chapter_01/index.html
 //https://gitlab.com/sequoia-pgp/sequoia/blob/cb001fdaec7e6fa91109f7649ab170e534ec7227/openpgp/examples/generate-sign-verify.rs
@@ -16,6 +18,7 @@ pub fn create_key(username: &str, password: Option<Password>) -> openpgp::Result
 	let (cert, _) = CertBuilder::new()
 	.add_userid(username)
 	.set_password(password)
+	.add_signing_subkey()
 	.generate()?;
 	
 	Ok(cert)
@@ -29,8 +32,10 @@ I can split these signatures into ones that return the vec and ones that write t
 */
 
 pub fn sign_data(plain_data: &[u8], cert: &Cert) -> openpgp::Result<Vec<u8>> {
-	let keypair = cert.primary_key().key().clone()
-	.parts_into_secret()?.into_keypair()?;
+	//Find a valid signing capable key
+	let keypair = cert.keys().unencrypted_secret()
+	.with_policy(&POLICY, None).alive().revoked(false).for_signing()
+	.nth(0).unwrap().key().clone().into_keypair()?;
 	
 	//Create a pipe for the data to go through
 	let mut signed_data = Vec::new();
@@ -51,11 +56,10 @@ struct Helper<'a> {
 pub fn verify(signed_data: &[u8], cert: &Cert) -> openpgp::Result<Vec<u8>> {
 	let mut plaintext = Vec::<u8>::new();
 
-	let policy = policy::new();
 	let mut verifier = VerifierBuilder::from_bytes(signed_data)?
-		.with_policy(&policy, None, Helper {cert: cert})?;
+		.with_policy(&POLICY, None, Helper {cert: cert})?;
 	
-	verifier.read_to_end(&mut plaintext);
+	verifier.read_to_end(&mut plaintext).unwrap();
 
 	Ok(plaintext)
 }

@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::fs::create_dir_all;
 
 extern crate sled;

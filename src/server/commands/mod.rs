@@ -6,10 +6,10 @@ use register::register;
 
 type ArgumentList= Vec::<&'static str>;
 
-pub fn command_handler(message: MessageCommand) -> String {
+pub fn command_handler(message: MessageCommand) -> Vec<u8> {
 	return match message.command.as_str() {
 		"REG" => register(message.data),
-		_ => format!("-{} Unknown command\r\n", message.command)
+		_ => format!("-{} Unknown command\r\n", message.command).into_bytes()
 	}
 }
 

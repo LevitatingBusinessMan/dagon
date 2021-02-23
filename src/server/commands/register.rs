@@ -1,5 +1,7 @@
-use dagon_lib::protocol::{MessageData, Value};
+use dagon_lib::protocol::*;
 use dagon_lib::keys::verify;
+
+extern crate dagon_lib;
 
 use crate::commands::{ArgumentList, has_required};
 use sequoia_openpgp as openpgp;
@@ -17,11 +19,11 @@ Then we can verify that the client possesses the privkey
 I also think every pubkey should correspond to a single username
 */
 
-pub fn register(data: MessageData) -> String {
+pub fn register(data: MessageData) -> Vec<u8> {
 
 	let required_arguments: ArgumentList = vec!["username", "pubkey", "signed"];
 	if let Err(error) = has_required(&data, required_arguments) {
-		return error
+		return error.into_bytes();
 	}
 
 	let username = data.get("username").unwrap().data();
@@ -32,13 +34,18 @@ pub fn register(data: MessageData) -> String {
 
 	//Invalid key
 	if let Err(_) = cert {
-		return "-REG\r\n".to_owned()
+		return "-REG\r\n".to_owned().into_bytes()
 	}
 
 	let cert = cert.unwrap();
 
-	let msg = verify(signed_username.as_slice(), &cert).unwrap();
-	println!("{:?}",String::from_utf8(msg));
+	let decrypted_username = verify(signed_username.as_slice(), &cert).unwrap();
 
-	return "+REG\r\n".to_owned()
+	if &decrypted_username == username {
+		return "+REG\r\n".to_owned().into_bytes()
+	} else {
+		return error_message!("REG", "Failed to verify username signature")
+	}
+
+	
 }

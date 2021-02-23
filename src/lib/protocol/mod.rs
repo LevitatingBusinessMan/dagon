@@ -1,4 +1,4 @@
-use std::{convert::TryInto, io::{Error, ErrorKind, Result}};
+use std::io::{Error, ErrorKind, Result};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -72,13 +72,58 @@ impl Value {
 	}
 }
 
+//I tried using Into<i32> but rustc hated that idea
+impl From<i32> for Value {
+	fn from(i: i32) -> Value {
+		Value::Integer(i)
+	}
+}
+
+impl From<Vec<u8>> for Value {
+	fn from(v: Vec::<u8>) -> Value {
+		Value::Data(v)
+	}
+}
+
+impl From<&str> for Value {
+	fn from(v: &str) -> Value {
+		Value::Data(v.to_owned().into_bytes())
+	}
+}
+
+impl From<String> for Value {
+	fn from(v: String) -> Value {
+		Value::Data(v.into_bytes())
+	}
+}
+
 #[derive(PartialEq)]
 enum DataType {
 	Integer,
 	Data
 }
 
-pub fn encode_message(command: String, mut data: MessageData) -> Vec::<u8> {
+#[macro_export]
+macro_rules! dasp(
+    { $($key:expr => $value:expr),+ } => {
+        {
+            let mut map = MessageData::new();
+            $(
+                map.insert($key, $value);
+            )+
+            map
+        }
+     };
+);
+
+#[macro_export]
+macro_rules! error_message {
+	($cmd:expr, $err:expr) => {
+		encode_message(format!("-{}",$cmd), dasp!{"msg".to_string() => Value::from($err)})
+	};
+}
+
+pub fn encode_message(command: String, data: MessageData) -> Vec::<u8> {
 	let mut message = Vec::<u8>::new();
 	message.append(&mut format!("{}\r\n", command).into_bytes());
 	message.append(&mut encode_data(data));
