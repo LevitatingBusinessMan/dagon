@@ -10,10 +10,16 @@ mod commands;
 use commands::command_handler;
 
 mod keyserver;
+mod logger;
+use logger::*;
 
 fn main() -> std::io::Result<()> {
 
-	keyserver::initialize();
+	linfo("info");
+	lsuc("suc");
+	lwarn("warn");
+	lerr("err");
+	ldebug("debug");
 
 	let listener = TcpListener::bind("127.0.0.1:7777")?;
 

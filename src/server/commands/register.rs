@@ -7,6 +7,11 @@ use crate::commands::{ArgumentList, has_required};
 use sequoia_openpgp as openpgp;
 use openpgp::cert::prelude::*;
 use openpgp::parse::Parse;
+use openpgp::serialize::Serialize;
+
+use std::io::Write;
+
+use crate::keyserver;
 
 /*
 I am not completely settled yet on how this should behave.
@@ -41,11 +46,13 @@ pub fn register(data: MessageData) -> Vec<u8> {
 
 	let decrypted_username = verify(signed_username.as_slice(), &cert).unwrap();
 
+	let mut armor = Vec::new();
+	cert.retain_userids(|_id| {false}).armored().serialize(&mut armor).unwrap();
+	
 	if &decrypted_username == username {
+		keyserver::register(username, &armor).unwrap();
 		return "+REG\r\n".to_owned().into_bytes()
 	} else {
 		return error_message!("REG", "Failed to verify username signature")
 	}
-
-	
 }

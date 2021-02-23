@@ -17,6 +17,9 @@ name = "client"
 path = "src/client/main.rs"
 
 [dependencies]
-sled = "0.34.6"
+sled = {version = "0.34.6", features = ["compression"]}
 sequoia-openpgp = {git = "https://gitlab.com/sequoia-pgp/sequoia.git", branch="main"}
 anyhow = "1.0.38"
+lazy_static = "1.4.0"
+backtrace = "0.3"
+chrono = "0.4.19"
