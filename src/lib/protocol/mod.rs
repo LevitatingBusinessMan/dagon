@@ -8,13 +8,6 @@ pub struct MessageCommand {
 	pub data: HashMap<String, Value>
 }
 
-/* 
-
-TODO
-MessageData should have a nice syntax to add to it
-
-*/
-
 ///The DASP data in a message
 pub type MessageData = HashMap<String, Value>;
 
@@ -56,9 +49,27 @@ I should rely on an iter with defined item types.
 
 #[derive(Debug)]
 ///Either a vector of bytes or a single integer
+//TODO value shoud consist of dyn [u8] or something similiar
 pub enum Value {
 	Integer(i32),
 	Data(Vec::<u8>)
+}
+
+impl Value {
+	pub fn int(&self) -> &i32 {
+		if let Value::Integer(i) = self {
+			i
+		} else {
+			panic!("Failed to deconstruct value to int")
+		}
+	}
+	pub fn data(&self) -> &Vec::<u8> {
+		if let Value::Data(d) = self {
+			d
+		} else {
+			panic!("Failed to deconstruct value to data")
+		}
+	}
 }
 
 #[derive(PartialEq)]
@@ -91,6 +102,8 @@ pub fn encode_data(mut data: MessageData) -> Vec<u8> {
 	encoded
 }
 
+//TODO
+//Consider using Read here instead of iterator?
 ///Decode full protocol messages, the command and data
 pub fn decode_message(mut stream: impl Iterator<Item=u8>) -> Result<MessageCommand> {
 	

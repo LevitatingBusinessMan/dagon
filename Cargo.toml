@@ -1,6 +1,6 @@
 [package]
 name = "dagon"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["LevitatingBusinessMan <public@reinfernhout.xyz>"]
 edition = "2018"
 
@@ -19,3 +19,4 @@ path = "src/client/main.rs"
 [dependencies]
 sled = "0.34.6"
 sequoia-openpgp = {git = "https://gitlab.com/sequoia-pgp/sequoia.git", branch="main"}
+anyhow = "1.0.38"
