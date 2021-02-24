@@ -70,9 +70,7 @@ fn main() {
 				"sd_key" => session_cert.armored().to_vec().unwrap()
 			}));
 
-			let mut buf = Vec::new();
-			stream.read_to_end(&mut buf).unwrap();
-			println!("{}", String::from_utf8(buf).unwrap());
+			println!("{:?}", decode_message(stream.bytes().map(|x| x.unwrap_or_default())).unwrap());
 
 		},
 		"test" => {

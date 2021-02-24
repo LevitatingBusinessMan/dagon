@@ -4,7 +4,8 @@ use std::net::SocketAddr;
 use crate::keyserver::exists;
 use crate::commands::{ArgumentList, has_required};
 use sequoia_openpgp as openpgp;
-use openpgp::{cert::Cert, serialize::SerializeInto};
+use openpgp::cert::Cert;
+use openpgp::serialize::Serialize;
 use openpgp::parse::Parse;
 use crate::sessions::{add_session, Session};
 
@@ -31,11 +32,11 @@ pub fn authenticate(data: MessageData, peer: SocketAddr) -> Vec<u8> {
 		return error_message!("AUT", "Pubkey is not in database")
 	}
 
-	add_session()/////
+	add_session(peer, cert.clone()).unwrap();
 
 	let cd_key = create_session_key().unwrap();
 	let mut buf = Vec::new();
-	cd_key.armored().export_into(&mut buf).unwrap();
+	cd_key.armored().export(&mut buf).unwrap();
 
 	encode_message("+AUT", dasp!{
 		"cd_key" => buf

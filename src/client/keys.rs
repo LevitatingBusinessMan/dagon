@@ -39,10 +39,14 @@ pub fn get_key(username: &str) -> openpgp::Result<Cert> {
 	#[allow(deprecated)]
 	let path = std::env::home_dir().unwrap().join(".local/share/dagon/keys/").join(username);
 
+	/*
 	let mut keyfile = File::open(path)?;
 
 	let mut buf = Vec::new();
 	keyfile.read_to_end(&mut buf)?;	
 
 	Ok(Cert::from_bytes(&buf)?)
+	*/
+
+	Ok(Cert::from_file(path)?)
 }

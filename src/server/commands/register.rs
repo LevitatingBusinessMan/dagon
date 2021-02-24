@@ -43,12 +43,9 @@ pub fn register(data: MessageData) -> Vec<u8> {
 	let cert = cert.unwrap();
 
 	let decrypted_username = verify(signed_username.as_slice(), &cert).unwrap();
-
-	let mut armor = Vec::new();
-	cert.retain_userids(|_id| {false}).armored().serialize(&mut armor).unwrap();
 	
 	if &decrypted_username == username {
-		keyserver::register(username, &armor).unwrap();
+		keyserver::register(username, &cert).unwrap();
 		return "+REG\r\n".to_owned().into_bytes()
 	} else {
 		return error_message!("REG", "Failed to verify username signature")

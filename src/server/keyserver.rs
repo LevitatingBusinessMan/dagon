@@ -5,11 +5,19 @@ use sled::IVec;
 
 use sequoia_openpgp as openpgp;
 use openpgp::cert::Cert;
-use openpgp::serialize::SerializeInto;
+use openpgp::serialize::Serialize;
 
 use sled::Result;
 
 extern crate sled;
+
+/*
+
+TODO
+A better structure for this would probably be to index via key fingerprint.
+The value would be the key with the username in the form of a comment
+
+*/
 
 //#[cfg(debug_assertions)]
 const data_directory: &str = "/tmp/dagon/keys";
@@ -21,8 +29,14 @@ lazy_static! {
 	};
 }
 
-pub fn register(username: &[u8], key: &[u8]) -> Result<()> {
-	DB.insert(key, username).unwrap();
+pub fn register(username: &[u8], cert: &Cert) ->anyhow::Result<()> {
+	
+	let pubkey = cert.clone().retain_userids(|_id| {false});
+
+	let mut armor = Vec::new();
+	pubkey.armored().serialize(&mut armor)?;
+
+	DB.insert(armor, username).unwrap();
 	Ok(())
 }
 
@@ -31,8 +45,12 @@ pub fn register(username: &[u8], key: &[u8]) -> Result<()> {
 } */
 
 //pub fn exists(username: &[u8])
-pub fn exists(pubkey: &Cert) -> Result<bool> {
-	let mut buf = Vec::new();
-	pubkey.armored().serialize_into(&mut buf);
-	DB.contains_key(buf)
+pub fn exists(cert: &Cert) -> anyhow::Result<bool> {
+
+	let pubkey = cert.clone().retain_userids(|_id| {false});
+
+	let mut armor = Vec::new();
+	pubkey.armored().serialize(&mut armor)?;
+
+	Ok(DB.contains_key(armor)?)
 }

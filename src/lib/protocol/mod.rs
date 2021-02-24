@@ -1,11 +1,47 @@
 use std::io::{Error, ErrorKind, Result};
 use std::collections::HashMap;
 
-#[derive(Debug)]
 ///This struct contains all data send in a single message the command and its arguments/data
 pub struct MessageCommand {
 	pub command: String,
-	pub data: HashMap<String, Value>
+	pub data: MessageData
+}
+
+pub enum CommandType {
+	Request,
+	Succes,
+	Error
+}
+
+impl MessageCommand {
+	pub fn ctype(&self) -> CommandType {
+		if self.command.starts_with("-") {
+			return CommandType::Error
+		}
+		if self.command.starts_with("+") {
+			return CommandType::Succes
+		}
+		return CommandType::Request
+	}
+}
+
+impl std::fmt::Debug for MessageCommand {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let mut string = self.command.clone();
+
+		for (key, value) in &self.data {
+			string = format!("{} {}: {}", string, key, match value {
+				Value::Data(data) => {
+					String::from_utf8(data.clone()).unwrap_or(format!("{:?}", data).to_string())
+				},
+				Value::Integer(int) => {
+					int.to_string()
+				}
+			});
+		}
+		f.write_str(&string)?;
+		Ok(())
+	}
 }
 
 ///The DASP data in a message
@@ -152,10 +188,16 @@ pub fn encode_data(mut data: MessageData) -> Vec<u8> {
 ///Decode full protocol messages, the command and data
 pub fn decode_message(mut stream: impl Iterator<Item=u8>) -> Result<MessageCommand> {
 	
-	let command = stream.by_ref().take(3).collect::<Vec::<u8>>();
+
+	let first_char = stream.next().ok_or(Error::new(ErrorKind::InvalidData, "Not able to parse 3 character command (no first byte)"))?;
+
+	let is_response = first_char == '+' as u8 || first_char == '-' as u8;
+
+	let mut command = vec![first_char];
+	command.append(&mut stream.by_ref().take(if is_response  {3} else {2}).collect::<Vec::<u8>>());
 	let command = String::from_utf8_lossy(&command).to_string();
 
-	if command.len() != 3 {
+	if (command.len() != 3 && !is_response) && (command.len() != 4 && is_response) {
 		return Err(Error::new(ErrorKind::InvalidData, "Not able to parse 3 character command"));
 	}
 	
@@ -261,7 +303,7 @@ pub fn decode_data(mut data: impl Iterator<Item=u8>) -> Result<MessageData>
 		let mut key = String::with_capacity(keylength as usize);
 		for _ in 0..keylength {
 			let byte = data.next().unwrap() as char;
-			if !byte.is_ascii_alphanumeric() {
+			if !byte.is_ascii_alphanumeric() && byte != '_' {
 				return Err(Error::new(ErrorKind::InvalidData, format!("Unsupported byte in key: '{}'", byte as u8)))
 			}
 			key.push(byte);

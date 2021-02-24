@@ -35,7 +35,7 @@ fn on_connect(mut stream: TcpStream) {
 	let peer = stream.peer_addr().unwrap();
 	let output = command_handler(data, peer);
 
-	print!("{}", String::from_utf8_lossy(&output));
+	linfo(&String::from_utf8_lossy(&output));
 
 	stream.write(&output).unwrap();
 }
