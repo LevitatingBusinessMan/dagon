@@ -9,8 +9,6 @@ use openpgp::cert::prelude::*;
 use openpgp::parse::Parse;
 use openpgp::serialize::Serialize;
 
-use std::io::Write;
-
 use crate::keyserver;
 
 /*

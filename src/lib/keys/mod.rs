@@ -14,11 +14,19 @@ static POLICY: policy = policy::new();
 //https://docs.sequoia-pgp.org/sequoia_guide/chapter_01/index.html
 //https://gitlab.com/sequoia-pgp/sequoia/blob/cb001fdaec7e6fa91109f7649ab170e534ec7227/openpgp/examples/generate-sign-verify.rs
 
-pub fn create_key(username: &str, password: Option<Password>) -> openpgp::Result<Cert> {
+pub fn create_auth_key(username: &str, password: Option<Password>) -> openpgp::Result<Cert> {
 	let (cert, _) = CertBuilder::new()
 	.add_userid(username)
 	.set_password(password)
 	.add_signing_subkey()
+	.generate()?;
+	
+	Ok(cert)
+}
+
+pub fn create_session_key() -> openpgp::Result<Cert> {
+	let (cert, _) = CertBuilder::new()
+	.add_transport_encryption_subkey()
 	.generate()?;
 	
 	Ok(cert)

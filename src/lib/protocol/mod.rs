@@ -105,12 +105,12 @@ enum DataType {
 
 #[macro_export]
 macro_rules! dasp(
-    { $($key:expr => $value:expr),+ } => {
+    { $($key:expr => $value:expr),* } => {
         {
             let mut map = MessageData::new();
             $(
-                map.insert($key, $value);
-            )+
+                map.insert($key.to_owned(), Value::from($value));
+            )*
             map
         }
      };
@@ -119,11 +119,11 @@ macro_rules! dasp(
 #[macro_export]
 macro_rules! error_message {
 	($cmd:expr, $err:expr) => {
-		encode_message(format!("-{}",$cmd), dasp!{"msg".to_string() => Value::from($err)})
+		encode_message(&format!("-{}",$cmd), dasp!{"msg".to_string() => $err})
 	};
 }
 
-pub fn encode_message(command: String, data: MessageData) -> Vec::<u8> {
+pub fn encode_message(command: &str, data: MessageData) -> Vec::<u8> {
 	let mut message = Vec::<u8>::new();
 	message.append(&mut format!("{}\r\n", command).into_bytes());
 	message.append(&mut encode_data(data));

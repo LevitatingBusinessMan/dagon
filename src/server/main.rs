@@ -8,19 +8,12 @@ use dagon_lib::protocol::*;
 
 mod commands;
 use commands::command_handler;
-
 mod keyserver;
 mod logger;
 use logger::*;
+mod sessions;
 
 fn main() -> std::io::Result<()> {
-
-	linfo("info");
-	lsuc("suc");
-	lwarn("warn");
-	lerr("err");
-	ldebug("debug");
-
 	let listener = TcpListener::bind("127.0.0.1:7777")?;
 
     for stream in listener.incoming() {
@@ -39,7 +32,8 @@ fn on_connect(mut stream: TcpStream) {
 
 	//stream.write(format!("{:?}\n", data).as_bytes()).unwrap();
 
-	let output = command_handler(data);
+	let peer = stream.peer_addr().unwrap();
+	let output = command_handler(data, peer);
 
 	print!("{}", String::from_utf8_lossy(&output));
 

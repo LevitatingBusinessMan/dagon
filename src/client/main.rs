@@ -1,24 +1,19 @@
 use std::{env, io::Read};
-use std::collections::HashMap;
 use std::time::Duration;
 use std::io::Write;
 
 mod keys;
-use keys::new_key;
+use keys::{new_key, get_key};
 
 use sequoia_openpgp as openpgp;
-use openpgp::serialize::{Serialize, SerializeInto};
-use openpgp::cert::prelude::*;
-use openpgp::serialize::stream::*;
-use openpgp::packet::prelude::*;
-use openpgp::parse::{Parse, stream::*};
-use openpgp::policy::Policy;
-use openpgp::policy::StandardPolicy as P;
+use openpgp::serialize::SerializeInto;
 
+
+#[macro_use]
 extern crate dagon_lib;
 use dagon_lib::protocol::{encode_message, Value, MessageData, decode_message};
-use dagon_lib::keys::sign_data;
-use std::net::{TcpStream, SocketAddr};
+use dagon_lib::keys::{sign_data, create_session_key};
+use std::net::TcpStream;
 
 const SERVER_HOST: &str = "127.0.0.1:7777";
 const TIMEOUT: u64 = 5;
@@ -57,6 +52,28 @@ fn main() {
 			stream.read_to_end(&mut buf).unwrap();
 
 			println!("{}", String::from_utf8(buf).unwrap());
+		},
+		"connect" => {
+			let username = args[1].as_str();
+
+			if args.len() < 2 {
+				panic!("No username supplied")
+			}
+
+			let cert = get_key(username).unwrap();
+
+			let session_cert = create_session_key().unwrap();
+
+			let mut stream = connect!();
+			stream.write(&encode_message("AUT", dasp!{
+				"pubkey" => cert.armored().to_vec().unwrap(),
+				"sd_key" => session_cert.armored().to_vec().unwrap()
+			}));
+
+			let mut buf = Vec::new();
+			stream.read_to_end(&mut buf).unwrap();
+			println!("{}", String::from_utf8(buf).unwrap());
+
 		},
 		"test" => {
 			let mut data = MessageData::new();
