@@ -1,6 +1,11 @@
 use std::io::{Error, ErrorKind, Result};
 use std::collections::HashMap;
 
+use sequoia_openpgp as openpgp;
+use openpgp::cert::Cert; 
+
+use crate::keys::{sign, encrypt};
+
 ///This struct contains all data send in a single message the command and its arguments/data
 pub struct MessageCommand {
 	pub command: String,
@@ -157,13 +162,43 @@ macro_rules! error_message {
 	($cmd:expr, $err:expr) => {
 		encode_message(&format!("-{}",$cmd), dasp!{"msg".to_string() => $err})
 	};
+	($cmd:expr, $err:expr, $sign_key:expr, $encrypt_key:expr) => {
+		encode_message_enc(&format!("-{}",$cmd), dasp!{"msg".to_string() => $err}, $sign_key, $encrypt_key)
+	};
 }
 
-pub fn encode_message(command: &str, data: MessageData) -> Vec::<u8> {
+pub fn encode_message_enc(command: &str, data: MessageData, sign_key: Option<&Cert>, encrypt_key: Option<&Cert>) -> openpgp::Result<Vec<u8>> {
+	let mut message = Vec::<u8>::new();
+	message.append(&mut format!("{}\r\n", command).into_bytes());
+	message.append(&mut encode_data_enc(data, sign_key, encrypt_key)?);
+	Ok(message)	
+}
+
+pub fn encode_message(command: &str, data: MessageData) -> Vec<u8> {
 	let mut message = Vec::<u8>::new();
 	message.append(&mut format!("{}\r\n", command).into_bytes());
 	message.append(&mut encode_data(data));
 	message
+}
+
+pub fn encode_data_enc(data: MessageData, sign_key: Option<&Cert>, encrypt_key: Option<&Cert>) -> openpgp::Result<Vec<u8>> {
+	let mut encoded = encode_data(data);
+
+	match encrypt_key {
+		Some(cert) => {
+			encoded = encrypt(&encoded, cert)?;
+		},
+		None => {}
+	}
+
+	match sign_key {
+		Some(cert) => {
+			encoded = sign(&encoded, cert)?;
+		},
+		None => {}
+	}
+
+	Ok(encoded)
 }
 
 pub fn encode_data(mut data: MessageData) -> Vec<u8> {

@@ -152,7 +152,7 @@ dependencies = [
 [[package]]
 name = "buffered-reader"
 version = "1.0.0"
-source = "git+https://gitlab.com/sequoia-pgp/sequoia.git?branch=main#b4238fa14e38d8fe4afabdfd1a50bd2bcb94bcb5"
+source = "git+https://gitlab.com/sequoia-pgp/sequoia.git?branch=main#79917186967a0c784d4fa8515aed99e3360ec7bf"
 dependencies = [
  "bzip2",
  "flate2",
@@ -734,9 +734,9 @@ checksum = "a9a7ab5d64814df0fe4a4b5ead45ed6c5f181ee3ff04ba344313a6c80446c5d4"
 
 [[package]]
 name = "once_cell"
-version = "1.6.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad167a2f54e832b82dbe003a046280dceffe5227b5f79e08e363a29638cfddd"
+checksum = "10acf907b94fc1b1a152d08ef97e7759650268cf986bf127f387e602b02c7e5a"
 
 [[package]]
 name = "parking_lot"
@@ -913,7 +913,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 [[package]]
 name = "sequoia-openpgp"
 version = "1.0.0"
-source = "git+https://gitlab.com/sequoia-pgp/sequoia.git?branch=main#b4238fa14e38d8fe4afabdfd1a50bd2bcb94bcb5"
+source = "git+https://gitlab.com/sequoia-pgp/sequoia.git?branch=main#79917186967a0c784d4fa8515aed99e3360ec7bf"
 dependencies = [
  "anyhow",
  "backtrace",

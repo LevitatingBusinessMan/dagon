@@ -17,6 +17,8 @@ TODO
 A better structure for this would probably be to index via key fingerprint.
 The value would be the key with the username in the form of a comment
 
+Also should at some point possibly be sequoia_store
+
 */
 
 //#[cfg(debug_assertions)]

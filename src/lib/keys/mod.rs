@@ -39,7 +39,7 @@ I can split these signatures into ones that return the vec and ones that write t
 
 */
 
-pub fn sign_data(plain_data: &[u8], cert: &Cert) -> openpgp::Result<Vec<u8>> {
+pub fn sign(plain_data: &[u8], cert: &Cert) -> openpgp::Result<Vec<u8>> {
 	//Find a valid signing capable key
 	let keypair = cert.keys().unencrypted_secret()
 	.with_policy(&POLICY, None).alive().revoked(false).for_signing()
@@ -112,4 +112,19 @@ impl<'a> VerificationHelper for Helper<'a> {
             Err(anyhow::anyhow!("Signature verification failed"))
         }
 	}
+}
+
+pub fn encrypt(plain_data: &[u8], cert: &Cert) -> openpgp::Result<Vec<u8>> {
+	let mut encrypted_data = Vec::<u8>::new();
+	
+	let recipients = cert.keys().with_policy(&POLICY, None).supported().for_transport_encryption();
+	
+	let message = Message::new(&mut encrypted_data);
+	let message = Encryptor::for_recipients(message, recipients).build()?;
+	let mut message = LiteralWriter::new(message).build()?;
+	message.write_all(plain_data)?;
+
+	message.finalize()?;
+
+	Ok(encrypted_data)
 }

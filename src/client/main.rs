@@ -12,7 +12,7 @@ use openpgp::serialize::SerializeInto;
 #[macro_use]
 extern crate dagon_lib;
 use dagon_lib::protocol::{encode_message, Value, MessageData, decode_message};
-use dagon_lib::keys::{sign_data, create_session_key};
+use dagon_lib::keys::{sign, create_session_key};
 use std::net::TcpStream;
 
 const SERVER_HOST: &str = "127.0.0.1:7777";
@@ -41,7 +41,7 @@ fn main() {
 			let mut data = MessageData::new();
 			data.insert("username".into(), Value::Data(username.into()));
 			data.insert("pubkey".into(), Value::Data(cert.armored().to_vec().unwrap()));
-			data.insert("signed".into(), Value::Data(sign_data(username.as_bytes(), &cert).unwrap()));
+			data.insert("signed".into(), Value::Data(sign(username.as_bytes(), &cert).unwrap()));
 
 			let mut stream = connect!();
 			let message = encode_message("REG".into(), data);
@@ -68,7 +68,7 @@ fn main() {
 			stream.write(&encode_message("AUT", dasp!{
 				"pubkey" => cert.armored().to_vec().unwrap(),
 				"sd_key" => session_cert.armored().to_vec().unwrap()
-			}));
+			})).unwrap();
 
 			println!("{:?}", decode_message(stream.bytes().map(|x| x.unwrap_or_default())).unwrap());
 
